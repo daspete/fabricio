@@ -1,4 +1,4 @@
-import { BoxGeometry, Mesh, MeshPhongMaterial, Vector3 } from 'three';
+import { BoxGeometry, Euler, Group, Mesh, MeshPhongMaterial, Vector3 } from 'three';
 import { BaseGame } from '../base.game';
 import { BaseTower } from '../towers/base.tower';
 import { BaseEnemy } from '../enemies/base.enemy';
@@ -8,9 +8,12 @@ export class BaseWeapon {
   tower: BaseTower;
   game: BaseGame;
 
-  geometry?: BoxGeometry;
-  material?: MeshPhongMaterial;
-  mesh?: Mesh;
+  gameObject?: Group;
+  model?: Group;
+
+  // geometry?: BoxGeometry;
+  // material?: MeshPhongMaterial;
+  // mesh?: Mesh;
 
   currentEnemy: BaseEnemy | null = null;
 
@@ -27,22 +30,40 @@ export class BaseWeapon {
     this.tower = tower;
     this.game = this.tower.game;
 
-    const scaleX = this.game.ground.width / this.game.ground.cellCountX;
-    const scaleZ = this.game.ground.height / this.game.ground.cellCountY;
+    // const scaleX = this.game.ground.width / this.game.ground.cellCountX;
+    // const scaleZ = this.game.ground.height / this.game.ground.cellCountY;
 
-    this.geometry = new BoxGeometry(scaleX * 0.2, scaleX * 0.2, scaleZ * 1.5);
-    this.material = new MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
-    this.mesh = new Mesh(this.geometry, this.material);
-    this.mesh.position.set(0, scaleX * 0.75, 0);
-    this.tower.mesh?.add(this.mesh);
+    // this.geometry = new BoxGeometry(scaleX * 0.2, scaleX * 0.2, scaleZ * 1.5);
+    // this.material = new MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
+    // this.mesh = new Mesh(this.geometry, this.material);
+    // this.mesh.position.set(0, scaleX * 0.75, 0);
+    // this.tower.gameObject?.add(this.mesh);
+  }
+
+  async create() {
+    this.model = await this.game.modelLoader.load('LaserWeapon', '/models/entities/weapons/LaserWeapon.glb');
+    this.model.scale.set(2.2,1.2,1.2);
+    this.model.rotateY(Math.PI * -0.5);
+    
+    this.gameObject = new Group();
+    this.gameObject.add(this.model);
+    this.gameObject.position.set(-0.5, 17, 0);
+
+    this.tower.gameObject?.add(this.gameObject);
+  }
+
+  destroy() {
+    this.gameObject?.remove(this.model!);
+    this.gameObject?.parent?.remove(this.gameObject);
   }
 
   update() {
     const elapsedTime = this.game.clock.getElapsedTime();
 
     if (this.currentEnemy) {
-      if (this.currentEnemy?.mesh && this.tower.mesh!.position.distanceTo(this.currentEnemy.mesh.position) < this.maxDistance) {
-        this.mesh?.lookAt(this.currentEnemy.mesh.position);
+      if (this.currentEnemy?.gameObject && this.tower.gameObject!.position.distanceTo(this.currentEnemy.gameObject.position) < this.maxDistance) {
+        this.tower.gameObject?.lookAt(this.currentEnemy.gameObject.position);
+        this.gameObject?.lookAt(new Vector3(this.currentEnemy.gameObject.position.x, 0, this.currentEnemy.gameObject.position.z));
 
         if (this.lastShootTime + this.shootInterval < elapsedTime) {
           this.lastShootTime = elapsedTime;
@@ -50,6 +71,8 @@ export class BaseWeapon {
         }
       } else {
         this.currentEnemy = null;
+        // this.tower.gameObject?.rotation.setFromVector3(new Vector3(0, 0, 0));
+        this.gameObject?.rotation.setFromVector3(new Vector3(0, 0, 0));
       }
     } else {
       this.findEnemy();
@@ -70,10 +93,10 @@ export class BaseWeapon {
   shoot() {
     if (this.currentEnemy) {
       let weaponPosition = new Vector3();
-      this.mesh!.getWorldPosition(weaponPosition);
+      this.model!.getWorldPosition(weaponPosition);
 
       this.bullet = new BaseBullet(this, this.currentEnemy);
-      this.bullet.create(weaponPosition, this.currentEnemy.mesh!.position.clone());
+      this.bullet.create(weaponPosition, this.currentEnemy.gameObject!.position.clone());
 
 
       // this.currentEnemy.takeDamage(this.damage);
@@ -86,8 +109,8 @@ export class BaseWeapon {
     let closestEnemy: BaseEnemy | null = null;
 
     for (const enemy of enemies) {
-      if (enemy.mesh) {
-        const distance = this.tower.mesh?.position.distanceTo(enemy.mesh.position);
+      if (enemy.gameObject) {
+        const distance = this.tower.gameObject?.position.distanceTo(enemy.gameObject.position);
 
         if (distance && distance > this.maxDistance) {
           continue;

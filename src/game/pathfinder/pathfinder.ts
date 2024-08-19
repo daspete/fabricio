@@ -40,7 +40,7 @@ export class Pathfinder {
 
       x = (x + 0.5) * (this.game.ground.width / this.game.ground.cellCountX);
       z = (z + 0.5) * (this.game.ground.height / this.game.ground.cellCountY);
-      return new Vector3(x, 10, z);
+      return new Vector3(x, 0, z);
     });
   }
 }

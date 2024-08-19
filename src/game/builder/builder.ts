@@ -3,6 +3,15 @@ import { BaseGame } from '../base.game';
 import { BuilderIndicator } from './builder.indicator';
 import { BaseTower } from '../towers/base.tower';
 import { Positions } from '../utils/positions';
+import { Base } from '../bases/base';
+
+export enum BuildMode {
+  Tower,
+  Base,
+  WoodHut,
+  StoneHut,
+  IronHut,
+}
 
 export class Builder {
   game: BaseGame;
@@ -39,40 +48,64 @@ export class Builder {
 
     if (this.game.pathfinder.isWalkableAt(this.currentGridPosition.x, this.currentGridPosition.y)) {
       this.game.pathfinder.setWalkableAt(this.currentGridPosition.x, this.currentGridPosition.y, false);
-      this.addTower();
+      this.addEntity(new Vector2(this.currentGridPosition.x, this.currentGridPosition.y));
+      // this.addTower();
     } else {
       const currentTower = this.towers.find((tower) => {
-        return Positions.getGridPosition(tower.mesh!.position, this.game).equals(this.currentGridPosition);
+        return Positions.getGridPosition(tower.gameObject!.position, this.game).equals(this.currentGridPosition);
       });
 
-      if(currentTower) {
+      if (currentTower) {
         this.selectTower(currentTower);
       }
     }
-  
   }
 
-  addTower() {
-    if(this.game.ui.score < 5) {
+  addEntity(gridPosition: Vector2) {
+    switch (this.game.ui.buildMode) {
+      case BuildMode.Tower:
+        this.addTower(gridPosition);
+        break;
+      case BuildMode.Base:
+        this.addBase(gridPosition);
+        break;
+      case BuildMode.WoodHut:
+        break;
+      case BuildMode.StoneHut:
+        break;
+      case BuildMode.IronHut:
+        break;
+    }
+  }
+
+  async addTower(gridPosition: Vector2) {
+    if (this.game.ui.score < 5) {
       return;
     }
 
     this.game.ui.score -= 5;
 
     const tower = new BaseTower(this.game);
-    tower.create(new Vector3(this.indicator.mesh!.position.x, 0, this.indicator.mesh!.position.z));
+    await tower.create(gridPosition);
     this.towers.push(tower);
     this.selectTower(tower);
   }
 
+  async addBase(gridPosition: Vector2) {
+    const base = new Base(this.game);
+    await base.create(gridPosition);
+  }
+
   destroyTower(tower: BaseTower) {
     tower.destroy();
-    this.towers = this.towers.filter((t) => t !== tower);
-    this.game.pathfinder.setWalkableAt(this.currentGridPosition.x, this.currentGridPosition.y, true);
+
+    this.towers = this.towers.filter((t) => t.gameObject?.uuid !== tower.gameObject?.uuid);
+
+    this.game.pathfinder.setWalkableAt(tower.gridPosition.x, tower.gridPosition.y, true);
   }
 
   selectTower(tower: BaseTower) {
-    if(this.game.ui.selectedTower?.mesh?.uuid === tower.mesh?.uuid) {
+    if (this.game.ui.selectedTower?.gameObject?.uuid === tower.gameObject?.uuid) {
       this.game.ui.selectedTower = undefined;
     } else {
       this.game.ui.selectedTower = tower;
@@ -80,9 +113,10 @@ export class Builder {
   }
 
   update() {
-    for(const tower of this.towers) {
+    for (const tower of this.towers) {
       tower.update();
     }
+
     if (this.raycaster && this.game.camera) {
       this.raycaster.setFromCamera(this.pointer, this.game.camera);
 

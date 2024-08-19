@@ -19,7 +19,7 @@ export class EnemyManager {
 
   async spawnEnemies(count: number, energy: number, speedRange: number) {
     for (let i = 0; i < count; i++) {
-      this.createEnemy(energy, speedRange);
+      await this.createEnemy(energy, speedRange);
       await sleep(500);
     }
   }
@@ -30,7 +30,7 @@ export class EnemyManager {
     });
   }
 
-  createEnemy(energy: number, speedRange: number) {
+  async createEnemy(energy: number, speedRange: number) {
     const enemyStartPosition = new Vector2(0, Math.floor(Math.random() * this.game.ground.cellCountY));
     const enemyEndPosition = new Vector2(this.game.ground.cellCountX - 1, Math.floor(Math.random() * this.game.ground.cellCountY));
 
@@ -46,7 +46,7 @@ export class EnemyManager {
     }
 
     const enemy = new BaseEnemy(this.game, energy, speedRange, this.game.level);
-    enemy.create(path, enemyEndPosition);
+    await enemy.create(path, enemyEndPosition);
     this.enemies.push(enemy);
   }
 

@@ -3,14 +3,16 @@ import { GameScene } from './scenes/game.scene';
 import { BaseCamera } from './cameras/base.camera';
 import { Ground } from './environment/ground';
 import { ImageLoader } from './loaders/image.loader';
-import { Builder } from './builder/builder';
+import { Builder, BuildMode } from './builder/builder';
 import { Pathfinder } from './pathfinder/pathfinder';
 import { EnemyManager } from './enemies/enemy.manager';
-import type { BaseTower } from './towers/base.tower';
+import { BaseTower } from './towers/base.tower';
+import { ModelLoader } from './loaders/model.loader';
 
 export type GameUi = {
   level: number;
   score: number;
+  buildMode: BuildMode;
   selectedTower?: BaseTower;
 }
 
@@ -23,6 +25,7 @@ export class BaseGame {
   camera: BaseCamera;
   ground: Ground;
   loader: ImageLoader;
+  modelLoader: ModelLoader;
   builder: Builder;
   pathfinder: Pathfinder;
   enemyManager: EnemyManager;
@@ -34,6 +37,7 @@ export class BaseGame {
 
   constructor(container: HTMLElement, ui: GameUi) {
     this.loader = new ImageLoader();
+    this.modelLoader = new ModelLoader();
     this.ui = ui;
 
     this.container = container;

@@ -27,8 +27,6 @@ export class BaseBullet {
   }
 
   async create(startPosition: Vector3, targetPosition: Vector3) {
-    console.log('BaseBullet.create', startPosition, targetPosition);
-
     const scale = 0.5;
     this.lineGeometry = new BufferGeometry().setFromPoints([startPosition, targetPosition]);
     this.lineMaterial = new LineBasicMaterial({ color: 0xff0000 });
